@@ -1,0 +1,85 @@
+<!--
+  CANCELAMENTO do MOVIMENTO/NOTA (TMOV). O RM cancela junto o lançamento financeiro (FLAN) gerado por ele.
+  Use este caminho quando o FLAN tem IDMOV: o RM NÃO deixa cancelar direto o FLAN de nota
+  ("pertence ao módulo TOTVS Gestão de Estoque, Compras, Faturamento e Contratos").
+
+  POST {{rm_url}}/wsProcess/IwsProcess
+    Content-Type: text/xml; charset=utf-8
+    SOAPAction: "http://www.totvs.com/IwsProcess/ExecuteWithXmlParams"
+    Authorization: Basic (usuario:senha do RM)
+
+  Processo: MovCancelMovProc. Parâmetros: MovCancelMovProcParams.
+  Modelo tirado do próprio RM (GetSchema("MovCancelMovProc")) em 16/11/2026. Não reordene os elementos.
+
+  Marcadores:
+    {{rm_user}}            usuário de integração do RM (aparece 2 vezes)
+    {{idmov}}              IDMOV do movimento (aparece 2 vezes)
+    {{numeromov}}          TMOV.NUMEROMOV, ex. 000655
+    {{data_cancelamento}}  AAAA-MM-DD
+    {{motivo}}             motivo do cancelamento
+
+  Antes: conferir que o movimento não tem movimentos relacionados (TMOVRELAC) e que o FLAN está em aberto.
+  E que NÃO foi exportado para a Contabilidade (TMOV.STATUSEXPORTCONT = 0). Se for 1, o RM recusa com
+  "Movimento teve seus lançamentos contábeis exportados!" (teste de 16/11/2026, NF 000655): a Contabilidade
+  precisa desfazer a exportação antes.
+  Depois: TMOV.STATUS = 'C' e FLAN.STATUSLAN = 2. HTTP 200 NÃO garante sucesso.
+-->
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:tot="http://www.totvs.com/">
+  <soapenv:Header/>
+  <soapenv:Body>
+    <tot:ExecuteWithXmlParams>
+      <tot:ProcessServerName>MovCancelMovProc</tot:ProcessServerName>
+      <tot:strXmlParams><![CDATA[
+<MovCancelMovProcParams xmlns:i="http://www.w3.org/2001/XMLSchema-instance" z:Id="i1" xmlns:z="http://schemas.microsoft.com/2003/10/Serialization/" xmlns="http://www.totvs.com.br/RM/">
+  <Context xmlns:d2p1="http://www.totvs.com.br/RM/" z:Id="i2" xmlns="http://www.totvs.com/">
+    <d2p1:_params xmlns:d3p1="http://schemas.microsoft.com/2003/10/Serialization/Arrays">
+      <d3p1:KeyValueOfanyTypeanyType>
+        <d3p1:Key xmlns:d5p1="http://www.w3.org/2001/XMLSchema" i:type="d5p1:string">$CODCOLIGADA</d3p1:Key>
+        <d3p1:Value xmlns:d5p1="http://www.w3.org/2001/XMLSchema" i:type="d5p1:int">1</d3p1:Value>
+      </d3p1:KeyValueOfanyTypeanyType>
+      <d3p1:KeyValueOfanyTypeanyType>
+        <d3p1:Key xmlns:d5p1="http://www.w3.org/2001/XMLSchema" i:type="d5p1:string">$CODFILIAL</d3p1:Key>
+        <d3p1:Value xmlns:d5p1="http://www.w3.org/2001/XMLSchema" i:type="d5p1:int">1</d3p1:Value>
+      </d3p1:KeyValueOfanyTypeanyType>
+      <d3p1:KeyValueOfanyTypeanyType>
+        <d3p1:Key xmlns:d5p1="http://www.w3.org/2001/XMLSchema" i:type="d5p1:string">$CODSISTEMA</d3p1:Key>
+        <d3p1:Value xmlns:d5p1="http://www.w3.org/2001/XMLSchema" i:type="d5p1:string">T</d3p1:Value>
+      </d3p1:KeyValueOfanyTypeanyType>
+      <d3p1:KeyValueOfanyTypeanyType>
+        <d3p1:Key xmlns:d5p1="http://www.w3.org/2001/XMLSchema" i:type="d5p1:string">$CODUSUARIO</d3p1:Key>
+        <d3p1:Value xmlns:d5p1="http://www.w3.org/2001/XMLSchema" i:type="d5p1:string">{{rm_user}}</d3p1:Value>
+      </d3p1:KeyValueOfanyTypeanyType>
+    </d2p1:_params>
+    <d2p1:Environment>WebServices</d2p1:Environment>
+  </Context>
+  <PrimaryKeyList xmlns:d2p1="http://schemas.microsoft.com/2003/10/Serialization/Arrays" xmlns="http://www.totvs.com/">
+    <d2p1:ArrayOfanyType>
+      <d2p1:anyType xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:int">1</d2p1:anyType>
+      <d2p1:anyType xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:int">{{idmov}}</d2p1:anyType>
+    </d2p1:ArrayOfanyType>
+  </PrimaryKeyList>
+  <PrimaryKeyNames xmlns:d2p1="http://schemas.microsoft.com/2003/10/Serialization/Arrays" xmlns="http://www.totvs.com/">
+    <d2p1:string>CODCOLIGADA</d2p1:string>
+    <d2p1:string>IDMOV</d2p1:string>
+  </PrimaryKeyNames>
+  <MovimentosACancelar>
+    <MovimentosCancelar z:Id="i3">
+      <ApagarMovRelac>false</ApagarMovRelac>
+      <CancelarMovimentosGeradosSimultFaturamento>false</CancelarMovimentosGeradosSimultFaturamento>
+      <CancelarMovimentosGeradosSimultReabriCotacao>false</CancelarMovimentosGeradosSimultReabriCotacao>
+      <CodColigada>1</CodColigada>
+      <CodSistemaLogado>T</CodSistemaLogado>
+      <CodUsuarioLogado>{{rm_user}}</CodUsuarioLogado>
+      <DataCancelamento>{{data_cancelamento}}T00:00:00</DataCancelamento>
+      <ExcluirItensDaCotacao>false</ExcluirItensDaCotacao>
+      <IdExercicioFiscal i:nil="true" />
+      <IdMov>{{idmov}}</IdMov>
+      <MotivoCancelamento>{{motivo}}</MotivoCancelamento>
+      <NumeroMov>{{numeromov}}</NumeroMov>
+    </MovimentosCancelar>
+  </MovimentosACancelar>
+</MovCancelMovProcParams>
+]]></tot:strXmlParams>
+    </tot:ExecuteWithXmlParams>
+  </soapenv:Body>
+</soapenv:Envelope>

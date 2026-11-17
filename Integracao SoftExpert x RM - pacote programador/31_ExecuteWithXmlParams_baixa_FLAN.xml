@@ -1,0 +1,163 @@
+<!--
+  BAIXA de lançamento a pagar (FLAN) no RM, chamada pela SoftExpert depois da APROVAÇÃO.
+
+  POST {{rm_url}}/wsProcess/IwsProcess
+    Content-Type: text/xml; charset=utf-8
+    SOAPAction: "http://www.totvs.com/IwsProcess/ExecuteWithXmlParams"
+    Authorization: Basic (usuario:senha do RM)
+
+  Processo: FinLanBaixaTBCData. Parâmetros: FinLanBaixaTBCParamsProc (classe que o RM exige; a
+  FinTBCBaixaParamsProc foi recusada em 16/11/2026). XML gerado a partir das classes do próprio RM
+  (RM.Fin.Lan.Intf.dll), com todos os elementos: a ORDEM importa (DataContract), não reordene.
+
+  Marcadores a preencher:
+    {{rm_user}}      usuário de integração do RM (aparece 3 vezes, inclusive no Context)
+    {{data_baixa}}   AAAA-MM-DD (data do pagamento)
+    {{idlan}}        IDLAN do lançamento a pagar (FLAN), com STATUSLAN = 0 (aparece 3 vezes:
+                     PrimaryKeyList, ListIdLan e LanctoParaBaixas)
+    {{codcxa}}       conta-caixa de onde sai o pagamento (FCXA.CODCXA, ex. 033-1)
+    {{valor}}        valor pago, com PONTO decimal (ex. 4902.64)
+    {{historico}}    texto da baixa
+    {{evento}}       evento contábil da baixa (CODEVENTOBAIXA). Padrão 37: usado em quase todas as
+                     baixas a pagar manuais (43 e 45 aparecem em poucos casos). Sem ele o RM recusa.
+
+  Context: coligada 1, filial 1, sistema F (Fluxus). Sem ele o RM dá NullReferenceException.
+  Fixos: forma de pagamento 11, coligada da conta-caixa 1. Execução pelo Job Monitor (padrão do RM).
+-->
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:tot="http://www.totvs.com/">
+  <soapenv:Header/>
+  <soapenv:Body>
+    <tot:ExecuteWithXmlParams>
+      <tot:ProcessServerName>FinLanBaixaTBCData</tot:ProcessServerName>
+      <tot:strXmlParams><![CDATA[
+<FinLanBaixaTBCParamsProc xmlns:i="http://www.w3.org/2001/XMLSchema-instance" z:Id="i1" xmlns:z="http://schemas.microsoft.com/2003/10/Serialization/" xmlns="http://www.totvs.com.br/RM/">
+  <ActionModule i:nil="true" xmlns="http://www.totvs.com/" />
+  <ActionName i:nil="true" xmlns="http://www.totvs.com/" />
+  <CanParallelize xmlns="http://www.totvs.com/">false</CanParallelize>
+  <CanSendMail xmlns="http://www.totvs.com/">false</CanSendMail>
+  <CanWaitSchedule xmlns="http://www.totvs.com/">false</CanWaitSchedule>
+  <CodUsuario xmlns="http://www.totvs.com/">{{rm_user}}</CodUsuario>
+  <ConnectionId i:nil="true" xmlns="http://www.totvs.com/" />
+  <ConnectionString i:nil="true" xmlns="http://www.totvs.com/" />
+
+  <Context xmlns:d2p1="http://www.totvs.com.br/RM/" z:Id="i2" xmlns="http://www.totvs.com/">
+    <d2p1:_params xmlns:d3p1="http://schemas.microsoft.com/2003/10/Serialization/Arrays">
+      <d3p1:KeyValueOfanyTypeanyType>
+        <d3p1:Key xmlns:d5p1="http://www.w3.org/2001/XMLSchema" i:type="d5p1:string">$CODFILIAL</d3p1:Key>
+        <d3p1:Value xmlns:d5p1="http://www.w3.org/2001/XMLSchema" i:type="d5p1:int">1</d3p1:Value>
+      </d3p1:KeyValueOfanyTypeanyType>
+      <d3p1:KeyValueOfanyTypeanyType>
+        <d3p1:Key xmlns:d5p1="http://www.w3.org/2001/XMLSchema" i:type="d5p1:string">$DATASISTEMA</d3p1:Key>
+        <d3p1:Value xmlns:d5p1="http://www.w3.org/2001/XMLSchema" i:type="d5p1:dateTime">{{data_baixa}}T00:00:00</d3p1:Value>
+      </d3p1:KeyValueOfanyTypeanyType>
+      <d3p1:KeyValueOfanyTypeanyType>
+        <d3p1:Key xmlns:d5p1="http://www.w3.org/2001/XMLSchema" i:type="d5p1:string">$CODUSUARIO</d3p1:Key>
+        <d3p1:Value xmlns:d5p1="http://www.w3.org/2001/XMLSchema" i:type="d5p1:string">{{rm_user}}</d3p1:Value>
+      </d3p1:KeyValueOfanyTypeanyType>
+      <d3p1:KeyValueOfanyTypeanyType>
+        <d3p1:Key xmlns:d5p1="http://www.w3.org/2001/XMLSchema" i:type="d5p1:string">$CODSISTEMA</d3p1:Key>
+        <d3p1:Value xmlns:d5p1="http://www.w3.org/2001/XMLSchema" i:type="d5p1:string">F</d3p1:Value>
+      </d3p1:KeyValueOfanyTypeanyType>
+      <d3p1:KeyValueOfanyTypeanyType>
+        <d3p1:Key xmlns:d5p1="http://www.w3.org/2001/XMLSchema" i:type="d5p1:string">$CODCOLIGADA</d3p1:Key>
+        <d3p1:Value xmlns:d5p1="http://www.w3.org/2001/XMLSchema" i:type="d5p1:int">1</d3p1:Value>
+      </d3p1:KeyValueOfanyTypeanyType>
+    </d2p1:_params>
+    <d2p1:Environment>DotNet</d2p1:Environment>
+  </Context>
+  <CustomData i:nil="true" xmlns="http://www.totvs.com/" />
+  <DisableIsolateProcess xmlns="http://www.totvs.com/">false</DisableIsolateProcess>
+  <DriverType i:nil="true" xmlns="http://www.totvs.com/" />
+  <FailureMessage xmlns="http://www.totvs.com/">Falha na execução do processo</FailureMessage>
+  <FriendlyLogs i:nil="true" xmlns="http://www.totvs.com/" />
+  <HideProgressDialog xmlns="http://www.totvs.com/">false</HideProgressDialog>
+  <HostName i:nil="true" xmlns="http://www.totvs.com/" />
+  <Initialized xmlns="http://www.totvs.com/">false</Initialized>
+  <Ip i:nil="true" xmlns="http://www.totvs.com/" />
+  <IsolateProcess xmlns="http://www.totvs.com/">false</IsolateProcess>
+  <JobID xmlns="http://www.totvs.com/">
+    <Children />
+    <ExecID>-1</ExecID>
+    <ID>-1</ID>
+    <IsPriorityJob>false</IsPriorityJob>
+  </JobID>
+  <JobServerHostName i:nil="true" xmlns="http://www.totvs.com/" />
+  <MasterActionName i:nil="true" xmlns="http://www.totvs.com/" />
+  <MaximumQuantityOfPrimaryKeysPerProcess xmlns="http://www.totvs.com/">1000</MaximumQuantityOfPrimaryKeysPerProcess>
+  <MinimumQuantityOfPrimaryKeysPerProcess xmlns="http://www.totvs.com/">1</MinimumQuantityOfPrimaryKeysPerProcess>
+  <NetworkUser i:nil="true" xmlns="http://www.totvs.com/" />
+  <NotifyEmail xmlns="http://www.totvs.com/">false</NotifyEmail>
+  <NotifyEmailList xmlns:d2p1="http://schemas.microsoft.com/2003/10/Serialization/Arrays" i:nil="true" xmlns="http://www.totvs.com/" />
+  <NotifyFluig xmlns="http://www.totvs.com/">false</NotifyFluig>
+  <OnlineMode xmlns="http://www.totvs.com/">false</OnlineMode>
+  <PrimaryKeyList xmlns:d2p1="http://schemas.microsoft.com/2003/10/Serialization/Arrays" xmlns="http://www.totvs.com/">
+    <d2p1:ArrayOfanyType>
+      <d2p1:anyType xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:int">1</d2p1:anyType>
+      <d2p1:anyType xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:int">{{idlan}}</d2p1:anyType>
+    </d2p1:ArrayOfanyType>
+  </PrimaryKeyList>
+  <PrimaryKeyNames xmlns:d2p1="http://schemas.microsoft.com/2003/10/Serialization/Arrays" xmlns="http://www.totvs.com/">
+    <d2p1:string>CODCOLIGADA</d2p1:string>
+    <d2p1:string>IDLAN</d2p1:string>
+  </PrimaryKeyNames>
+  <PrimaryKeyTableName i:nil="true" xmlns="http://www.totvs.com/" />
+  <ProcessName i:nil="true" xmlns="http://www.totvs.com/" />
+  <QuantityOfSplits xmlns="http://www.totvs.com/">0</QuantityOfSplits>
+  <SaveLogInDatabase xmlns="http://www.totvs.com/">true</SaveLogInDatabase>
+  <SaveParamsExecution xmlns="http://www.totvs.com/">false</SaveParamsExecution>
+  <Scheduler xmlns="http://www.totvs.com/">JobMonitor</Scheduler>
+  <SendMail xmlns="http://www.totvs.com/">false</SendMail>
+  <ServerName i:nil="true" xmlns="http://www.totvs.com/" />
+  <ServiceInterface xmlns:d2p1="http://schemas.datacontract.org/2004/07/System" i:nil="true" xmlns="http://www.totvs.com/" />
+  <ShouldParallelize xmlns="http://www.totvs.com/">false</ShouldParallelize>
+  <ShowReExecuteButton xmlns="http://www.totvs.com/">true</ShowReExecuteButton>
+  <StatusMessage i:nil="true" xmlns="http://www.totvs.com/" />
+  <SuccessMessage xmlns="http://www.totvs.com/">Processo executado com sucesso</SuccessMessage>
+  <SyncExecution xmlns="http://www.totvs.com/">false</SyncExecution>
+  <UseJobMonitor xmlns="http://www.totvs.com/">true</UseJobMonitor>
+  <UserName i:nil="true" xmlns="http://www.totvs.com/" />
+  <WaitSchedule xmlns="http://www.totvs.com/">false</WaitSchedule>
+  <CodColigada>1</CodColigada>
+  <CodMoeda>R$</CodMoeda>
+  <ContabilizarPosBaixa>false</ContabilizarPosBaixa>
+  <CotacaoBaixa>0</CotacaoBaixa>
+  <DataBaixa>{{data_baixa}}T00:00:00</DataBaixa>
+  <DataSistema>{{data_baixa}}T00:00:00</DataSistema>
+  <HistoricoBaixa>{{historico}}</HistoricoBaixa>
+  <MotivoBxProtheus i:nil="true" />
+  <TipoGeracaoExtrato>ExtratoParaCadaLancamento</TipoGeracaoExtrato>
+  <UsarDataVencimentoBaixa>false</UsarDataVencimentoBaixa>
+  <CodUsuario>{{rm_user}}</CodUsuario>
+  <IsMsgUnicaProtheusEai2>false</IsMsgUnicaProtheusEai2>
+  <Pagamentos>
+    <FinPagamentoBaixaTBCParamsProc>
+      <LanctoParaBaixas>
+        <FinLanBaixaContabilizacaoTBC>
+          <CodEventoBaixa>{{evento}}</CodEventoBaixa>
+          <Data>{{data_baixa}}T00:00:00</Data>
+          <Descricao>{{historico}}</Descricao>
+          <IdLan>{{idlan}}</IdLan>
+          <Partidas />
+        </FinLanBaixaContabilizacaoTBC>
+      </LanctoParaBaixas>
+      <ListIdLan xmlns:d4p1="http://schemas.microsoft.com/2003/10/Serialization/Arrays">
+        <d4p1:int>{{idlan}}</d4p1:int>
+      </ListIdLan>
+      <MeioPagamento>
+        <Cartao />
+        <Cheque />
+        <CodColCxa>1</CodColCxa>
+        <CodColigada>1</CodColigada>
+        <CodCxa>{{codcxa}}</CodCxa>
+        <IdFormaPagto>11</IdFormaPagto>
+        <Valor>{{valor}}</Valor>
+      </MeioPagamento>
+    </FinPagamentoBaixaTBCParamsProc>
+  </Pagamentos>
+  <TipoGeracaoExtratoBaixa>ExtratoParaCadaLancamento</TipoGeracaoExtratoBaixa>
+  <ValoresAlteracao />
+</FinLanBaixaTBCParamsProc>
+]]></tot:strXmlParams>
+    </tot:ExecuteWithXmlParams>
+  </soapenv:Body>
+</soapenv:Envelope>

@@ -1,0 +1,28 @@
+<!--
+  PASSO 1 da troca de data: LER o lançamento a pagar (FLAN) antes de alterar.
+
+  POST {{rm_url}}/wsDataServer/IwsDataServer
+    Content-Type: text/xml; charset=utf-8
+    SOAPAction: "http://www.totvs.com/IwsDataServer/ReadRecord"
+    Authorization: Basic (usuario:senha do RM)
+
+  Marcadores:
+    {{idlan}}     IDLAN do lançamento (FLAN)
+    {{rm_user}}   usuário de integração do RM
+
+  O retorno (ReadRecordResult) é um XML <FinLAN> com os blocos FLAN, FLANCOMPL e FLANRATDEP.
+  Validar no retorno, antes de alterar:
+    PAGREC = 2      (a pagar)
+    STATUSLAN = 0   (em aberto; 1 = baixado, 2 = cancelado)
+  Esse XML é a base do SaveRecord (arquivo 42).
+-->
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:tot="http://www.totvs.com/">
+  <soapenv:Header/>
+  <soapenv:Body>
+    <tot:ReadRecord>
+      <tot:DataServerName>FinLanDataBR</tot:DataServerName>
+      <tot:PrimaryKey>1;{{idlan}}</tot:PrimaryKey>
+      <tot:Contexto>CODCOLIGADA=1;CODFILIAL=1;CODSISTEMA=F;CODUSUARIO={{rm_user}}</tot:Contexto>
+    </tot:ReadRecord>
+  </soapenv:Body>
+</soapenv:Envelope>

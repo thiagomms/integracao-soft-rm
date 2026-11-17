@@ -1,0 +1,47 @@
+<!--
+  PASSO 2 da troca de data: GRAVAR a nova DATA DE PREVISÃO DE BAIXA (FLAN.DATAPREVBAIXA).
+  Só a previsão de baixa muda. O vencimento (DATAVENCIMENTO) fica como está.
+
+  POST {{rm_url}}/wsDataServer/IwsDataServer
+    Content-Type: text/xml; charset=utf-8
+    SOAPAction: "http://www.totvs.com/IwsDataServer/SaveRecord"
+    Authorization: Basic (usuario:senha do RM)
+
+  COMO MONTAR O XML (dentro do CDATA):
+    1. Pegue o XML devolvido pelo ReadRecord (arquivo 41), INTEIRO: blocos FLAN, FLANCOMPL e FLANRATDEP.
+    2. Troque SOMENTE o valor de <DATAPREVBAIXA> pela nova data, no mesmo formato: AAAA-MM-DDT00:00:00
+    3. Não remova nem reordene os outros campos. Mandar o registro completo evita que o RM
+       zere campos ou mexa no rateio.
+  O exemplo abaixo está ENCURTADO só para mostrar onde fica o campo: "..." = demais campos do ReadRecord.
+
+  Retorno de sucesso: "1;{{idlan}}" (coligada;IDLAN). Qualquer outro texto é erro do RM.
+  Depois, rode o ReadRecord de novo e confira o DATAPREVBAIXA.
+-->
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:tot="http://www.totvs.com/">
+  <soapenv:Header/>
+  <soapenv:Body>
+    <tot:SaveRecord>
+      <tot:DataServerName>FinLanDataBR</tot:DataServerName>
+      <tot:XML><![CDATA[
+<FinLAN>
+  <FLAN>
+    <CODCOLIGADA>1</CODCOLIGADA>
+    <IDLAN>{{idlan}}</IDLAN>
+    ...
+    <DATAVENCIMENTO>(manter o valor lido)</DATAVENCIMENTO>
+    ...
+    <DATAPREVBAIXA>{{nova_data}}T00:00:00</DATAPREVBAIXA>
+    ...
+  </FLAN>
+  <FLANCOMPL>
+    ... (manter como veio do ReadRecord)
+  </FLANCOMPL>
+  <FLANRATDEP>
+    ... (manter como veio do ReadRecord)
+  </FLANRATDEP>
+</FinLAN>
+]]></tot:XML>
+      <tot:Contexto>CODCOLIGADA=1;CODFILIAL=1;CODSISTEMA=F;CODUSUARIO={{rm_user}}</tot:Contexto>
+    </tot:SaveRecord>
+  </soapenv:Body>
+</soapenv:Envelope>

@@ -1,0 +1,72 @@
+<!--
+  CANCELAMENTO de lançamento a pagar (FLAN). O movimento (TMOV) não é cancelado e pode ser relançado.
+
+  POST {{rm_url}}/wsProcess/IwsProcess
+    Content-Type: text/xml; charset=utf-8
+    SOAPAction: "http://www.totvs.com/IwsProcess/ExecuteWithXmlParams"
+    Authorization: Basic (usuario:senha do RM)
+
+  Processo: FinLanCancelamentoData. Parâmetros: FinLanCancelamentoParamsProc.
+  Modelo tirado do próprio RM (wsProcess / GetSchema("FinLanCancelamentoData")), em 16/11/2026.
+  A ORDEM dos elementos importa: não reordene.
+
+  Marcadores:
+    {{rm_user}}            usuário de integração do RM (aparece 3 vezes)
+    {{idlan}}              IDLAN do lançamento (aparece 2 vezes: PrimaryKeyList e ListaDeLancamentos)
+    {{data_cancelamento}}  AAAA-MM-DD
+    {{historico}}          motivo do cancelamento, ex. "Cancelado pela SoftExpert - processo 12345"
+
+  Retorno: "1" = sucesso. HTTP 200 NÃO garante sucesso: erro do RM volta como texto
+  (System.Exception...) dentro do ExecuteWithXmlParamsResult. Sempre conferir FLAN.STATUSLAN depois
+  (2 = cancelado).
+-->
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:tot="http://www.totvs.com/">
+  <soapenv:Header/>
+  <soapenv:Body>
+    <tot:ExecuteWithXmlParams>
+      <tot:ProcessServerName>FinLanCancelamentoData</tot:ProcessServerName>
+      <tot:strXmlParams><![CDATA[
+<FinLanCancelamentoParamsProc xmlns:i="http://www.w3.org/2001/XMLSchema-instance" z:Id="i1" xmlns:z="http://schemas.microsoft.com/2003/10/Serialization/" xmlns="http://www.totvs.com.br/RM/">
+  <CodUsuario xmlns="http://www.totvs.com/">{{rm_user}}</CodUsuario>
+  <Context xmlns:d2p1="http://www.totvs.com.br/RM/" z:Id="i2" xmlns="http://www.totvs.com/">
+    <d2p1:_params xmlns:d3p1="http://schemas.microsoft.com/2003/10/Serialization/Arrays">
+      <d3p1:KeyValueOfanyTypeanyType>
+        <d3p1:Key xmlns:d5p1="http://www.w3.org/2001/XMLSchema" i:type="d5p1:string">$CODCOLIGADA</d3p1:Key>
+        <d3p1:Value xmlns:d5p1="http://www.w3.org/2001/XMLSchema" i:type="d5p1:int">1</d3p1:Value>
+      </d3p1:KeyValueOfanyTypeanyType>
+      <d3p1:KeyValueOfanyTypeanyType>
+        <d3p1:Key xmlns:d5p1="http://www.w3.org/2001/XMLSchema" i:type="d5p1:string">$CODFILIAL</d3p1:Key>
+        <d3p1:Value xmlns:d5p1="http://www.w3.org/2001/XMLSchema" i:type="d5p1:int">1</d3p1:Value>
+      </d3p1:KeyValueOfanyTypeanyType>
+      <d3p1:KeyValueOfanyTypeanyType>
+        <d3p1:Key xmlns:d5p1="http://www.w3.org/2001/XMLSchema" i:type="d5p1:string">$CODSISTEMA</d3p1:Key>
+        <d3p1:Value xmlns:d5p1="http://www.w3.org/2001/XMLSchema" i:type="d5p1:string">F</d3p1:Value>
+      </d3p1:KeyValueOfanyTypeanyType>
+      <d3p1:KeyValueOfanyTypeanyType>
+        <d3p1:Key xmlns:d5p1="http://www.w3.org/2001/XMLSchema" i:type="d5p1:string">$CODUSUARIO</d3p1:Key>
+        <d3p1:Value xmlns:d5p1="http://www.w3.org/2001/XMLSchema" i:type="d5p1:string">{{rm_user}}</d3p1:Value>
+      </d3p1:KeyValueOfanyTypeanyType>
+    </d2p1:_params>
+    <d2p1:Environment>WebServices</d2p1:Environment>
+  </Context>
+  <PrimaryKeyList xmlns:d2p1="http://schemas.microsoft.com/2003/10/Serialization/Arrays" xmlns="http://www.totvs.com/">
+    <d2p1:ArrayOfanyType>
+      <d2p1:anyType xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:int">1</d2p1:anyType>
+      <d2p1:anyType xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:int">{{idlan}}</d2p1:anyType>
+    </d2p1:ArrayOfanyType>
+  </PrimaryKeyList>
+  <PrimaryKeyNames xmlns:d2p1="http://schemas.microsoft.com/2003/10/Serialization/Arrays" xmlns="http://www.totvs.com/">
+    <d2p1:string>CODCOLIGADA</d2p1:string>
+    <d2p1:string>IDLAN</d2p1:string>
+  </PrimaryKeyNames>
+  <CodColigada>1</CodColigada>
+  <DataCancelamento>{{data_cancelamento}}T00:00:00</DataCancelamento>
+  <Historico>{{historico}}</Historico>
+  <ListaDeLancamentos xmlns:d2p1="http://schemas.microsoft.com/2003/10/Serialization/Arrays">
+    <d2p1:int>{{idlan}}</d2p1:int>
+  </ListaDeLancamentos>
+</FinLanCancelamentoParamsProc>
+]]></tot:strXmlParams>
+    </tot:ExecuteWithXmlParams>
+  </soapenv:Body>
+</soapenv:Envelope>
